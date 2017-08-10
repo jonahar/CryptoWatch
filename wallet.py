@@ -2,8 +2,8 @@ import requests
 import pickle
 import os
 
-wallet_dir = os.path.expanduser("~")
-wallet_filename = ".cryptowatch"
+wallet_dir = os.path.join(os.path.expanduser("~"), ".cryptowatch")
+wallet_filename = ".cryptowatch.wallet"
 wallet_fullpath = os.path.join(wallet_dir, wallet_filename)
 
 
@@ -15,6 +15,8 @@ class Wallet:
     # the value of key 'addresses' is a set (no duplicates)
 
     def __init__(self):
+        if not os.path.isdir(wallet_dir):
+            os.mkdir(wallet_dir)
         if os.path.isfile(wallet_fullpath):
             with open(wallet_fullpath, 'rb') as f:
                 self.wallet = pickle.load(f)
@@ -75,7 +77,7 @@ class Wallet:
         list it is ignored.
 
         :param coin: coin code
-        :param addresses: addresses to remove (single address or list)
+        :param addresses: list of addresses to remove
         """
         coin = coin.upper()
         if coin.upper in self.wallet:
