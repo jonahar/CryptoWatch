@@ -71,7 +71,7 @@ class Wallet:
         self.wallet[coin]['manual_balance'] += balance
         self.dump()
 
-    def rmv_watch_address(self, coin, addresses):
+    def remove_watch_address(self, coin, addresses):
         """
         removes addresses of a coin from the watch list. If a given address is not on the watch
         list it is ignored.
@@ -84,6 +84,34 @@ class Wallet:
             for addr in addresses:
                 self.wallet[coin]['addresses'].discard(addr)
         self.dump()
+
+    def remove_manual_balance(self, coin):
+        """
+        removes the manual balance of the given coin
+        """
+        self.wallet[coin]['manual_balance'] = 0
+        self.dump()
+
+    def remove_coin(self, coin):
+        """
+        completely remove a coin from the wallet
+        :param coin: the coin to remove
+        """
+        self.wallet.pop(coin, 0)
+        self.dump()
+
+    def get_coins_ids(self):
+        """
+        :return: list of all the coins in this wallet
+        """
+        return list(self.wallet.keys())
+
+    def get_coin_info(self, coin):
+        """
+        :return: a dictionary with the given coin information:
+                 {'addresses' : {addr1, addr2, ...} , 'manual_balance' : Y }
+        """
+        return self.wallet[coin]
 
     def get_balances(self):
         """

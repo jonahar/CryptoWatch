@@ -1,14 +1,24 @@
 import curses
+import wallet as Wallet
 
 # to be initialized by init_render
 attributes = {}
 
 ADD = 0
-REMOVE = 1
+MANAGE_COIN = 1
 REFRESH = 2
 DELETE_WALLET = 3
 EXIT = 4
-MAIN_OPTIONS = ["Add", "Remove", "Refresh", "Delete wallet", "Exit"]
+MAIN_OPTIONS = ["Add coin", "Manage coin", "Refresh", "Delete wallet", "Exit"]
+
+REMOVE_ADDRESSES = 0
+REMOVE_MANUAL_BALANCE = 1
+DELETE_COIN = 2
+RETURN = 3
+MANAGE_COIN_OPTIONS = ["Remove addresses", "Remove manual balance", "Delete coin", "Return"]
+
+MAX_ADDRESS_LEN = 35
+
 ENTER = 10
 ESCAPE = 27
 
@@ -68,6 +78,34 @@ def display_options_bar(stdscr, y, x, options, highlight=-1, layout='vertical'):
             x += len(options[i]) + 2
 
 
+def read_option(stdscr, option, num_options, layout='vertical'):
+    """
+    track the user clicks to navigate between options on screen
+
+    :param option the currently chosen option
+    :param num_options total number of options in the options bar
+    :param layout 'vertical' or 'horizontal'. determines the navigation keys (up/down or left/right)
+    :return: a tuple (c, p) where c is the last pressed button, and p is the new current option
+    """
+    # todo add support to number pressing. if user click 3, option 3 will be marked
+
+    if layout == 'vertical':
+        decrement_key = curses.KEY_UP
+        increment_key = curses.KEY_DOWN
+    elif layout == 'horizontal':
+        decrement_key = curses.KEY_LEFT
+        increment_key = curses.KEY_RIGHT
+    else:
+        raise ValueError("Wrong parameter for 'layout' in read_option()")
+
+    c = stdscr.getch()
+    if c == decrement_key and option > 0:
+        return c, option - 1
+    elif c == increment_key and option < num_options - 1:
+        return c, option + 1
+    return c, option
+
+
 COLUMNS_SPACE = 12
 
 
@@ -79,6 +117,7 @@ def display_coins_table(stdscr, y, x, coins):
 
     number of lines written to screen is len(coins)+3
     """
+    # todo also display a column with unit values
     stdscr.addstr(y, x, "Coin        Amount      USD-value   BTC-value",
                   attributes['highlighted'])
     if len(coins) == 0:
@@ -116,30 +155,27 @@ def display_main_scr(stdscr, coins, option=0):
     """
 
     c = 0  # last character read
-    should_render = True  # for the first time drawing
 
     while c != ENTER:
-        if should_render:
-            main_header(stdscr)
-            display_coins_table(stdscr, SUB_MENU_START[0], SUB_MENU_START[1], coins)
-            display_options_bar(stdscr, SUB_MENU_START[0] + len(coins) + 5, SUB_MENU_START[1],
-                                MAIN_OPTIONS, highlight=option, layout='horizontal')
-            stdscr.refresh()
-            should_render = False
+        main_header(stdscr)
+        display_coins_table(stdscr, SUB_MENU_START[0], SUB_MENU_START[1], coins)
+        display_options_bar(stdscr, SUB_MENU_START[0] + len(coins) + 5, SUB_MENU_START[1],
+                            MAIN_OPTIONS, highlight=option, layout='horizontal')
 
-        c = stdscr.getch()
-
-        # todo add support to number pressing. if user click 3, option 3 will be marked
-        if c == curses.KEY_LEFT and option > 0:
-            option -= 1
-            should_render = True
-        elif c == curses.KEY_RIGHT and option < len(MAIN_OPTIONS) - 1:
-            option += 1
-            should_render = True
-        elif c == curses.KEY_RESIZE:
-            should_render = True
+        c, option = read_option(stdscr, option, len(MAIN_OPTIONS), 'horizontal')
 
     return option
+
+
+def read_address_from_user(stdscr):
+    """
+    read comma separated addresses from the user.
+
+    :return: list of all the addresses
+    """
+    addresses = stdscr.getstr().decode("utf-8")
+    addresses = "".join(addresses.split())  # remove any whitespaces
+    return addresses.split(',')
 
 
 def add_menu_header(stdscr):
@@ -166,14 +202,7 @@ def display_add_scr(stdscr, wallet):
         add_menu_header(stdscr)
         display_options_bar(stdscr, SUB_MENU_START[0], SUB_MENU_START[1],
                             ["Add addresses to watch", "Add balance manually"], option, 'vertical')
-
-        c = stdscr.getch()
-
-        # todo add support to number pressing
-        if c == curses.KEY_UP and option > 0:
-            option -= 1
-        elif c == curses.KEY_DOWN and option < 1:
-            option += 1
+        c, option = read_option(stdscr, option, 2, 'vertical')
 
     if c == ESCAPE:
         return
@@ -195,9 +224,7 @@ def display_add_scr(stdscr, wallet):
             last_line += 2
             stdscr.move(last_line + 1, SUB_MENU_START[1])
             last_line += 1
-            addresses = stdscr.getstr().decode("utf-8")
-            addresses = "".join(addresses.split())  # remove any whitespaces
-            addresses = addresses.split(',')
+            addresses = read_address_from_user(stdscr)
             wallet.add_watch_address(coin_code, addresses)
         else:
             # manually add balance
@@ -212,3 +239,80 @@ def display_add_scr(stdscr, wallet):
         curses.curs_set(0)
         curses.noecho()
         return None
+
+
+def manage_coin(stdscr, coin, wallet):
+    """
+    Display a manage screen for a specific coin
+
+    :param coin: the cin to manage
+    :param wallet: wallet object
+    """
+    c = 0
+    option = 0
+    coin_info = wallet.get_coin_info(coin)
+    addresses = coin_info['addresses']
+    balances = Wallet.lookup_address(coin, addresses)
+    manual_balance = coin_info['manual_balance']
+    while c != ENTER and c != ESCAPE:
+        main_header(stdscr)
+
+        stdscr.addstr(SUB_MENU_START[0], SUB_MENU_START[1], coin + " in wallet:")
+
+        # write the head of the table:   Address                  Balance
+        base_x = SUB_MENU_START[1]
+        stdscr.addstr(SUB_MENU_START[0] + 2, base_x, "Address", curses.A_UNDERLINE)
+        stdscr.addstr(SUB_MENU_START[0] + 2, base_x + MAX_ADDRESS_LEN + 2, "Balance",
+                      curses.A_UNDERLINE)
+
+        y = SUB_MENU_START[0] + 3  # the next line to write to
+        # write all addresses with their balances
+        for idx, addr in enumerate(addresses):
+            stdscr.addstr(y, base_x, addr)
+            stdscr.addstr(y, base_x + MAX_ADDRESS_LEN + 2, '%.8f' % balances[idx])
+            y += 1
+
+        if manual_balance != 0:
+            stdscr.addstr(y + 1, base_x, "Manual balance: " + ('%.8f' % manual_balance))
+            y += 2
+
+        y += 2
+        display_options_bar(stdscr, y, base_x, MANAGE_COIN_OPTIONS,
+                            highlight=option, layout='horizontal')
+        c, option = read_option(stdscr, option, len(MANAGE_COIN_OPTIONS), 'horizontal')
+
+    if c == ESCAPE or option == RETURN:
+        return
+
+    if option == REMOVE_ADDRESSES:
+        # todo implement
+        pass
+    elif option == REMOVE_MANUAL_BALANCE:
+        wallet.remove_manual_balance(coin)
+    elif option == DELETE_COIN:
+        wallet.remove_coin(coin)
+        return
+
+    # the user modified the coin, and did not choose to go back to main menu.
+    # stay in the manage coin menu
+    manage_coin(stdscr, coin, wallet)
+
+
+def manage_scr(stdscr, wallet):
+    """
+    Display the manage coins screen
+    """
+    coins = wallet.get_coins_ids()
+    c = 0
+    option = 0
+    while c != ENTER and c != ESCAPE:
+        main_header(stdscr)
+        stdscr.addstr(SUB_MENU_START[0], SUB_MENU_START[1], "Choose coin to manage:")
+        display_options_bar(stdscr, SUB_MENU_START[0] + 2, SUB_MENU_START[1],
+                            coins, highlight=option, layout='vertical')
+        c, option = read_option(stdscr, option, len(coins), 'vertical')
+
+    if c == ESCAPE:
+        return
+
+    manage_coin(stdscr, coins[option], wallet)

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from curses import wrapper
 import renderer
 import wallet as Wallet
@@ -12,9 +14,8 @@ def run_crypto_watch(stdscr):
         option = renderer.display_main_scr(stdscr, coins, option=option)
         if option == renderer.ADD:
             renderer.display_add_scr(stdscr, wallet)
-        elif option == renderer.REMOVE:
-            # todo implement remove
-            pass
+        elif option == renderer.MANAGE_COIN:
+            renderer.manage_scr(stdscr, wallet)
         elif option == renderer.REFRESH:
             pass  # coins will be refreshed in the next loop cycle
         elif option == renderer.DELETE_WALLET:
