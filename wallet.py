@@ -80,7 +80,7 @@ class Wallet:
         :param addresses: list of addresses to remove
         """
         coin = coin.upper()
-        if coin.upper in self.wallet:
+        if coin in self.wallet:
             for addr in addresses:
                 self.wallet[coin]['addresses'].discard(addr)
         self.dump()
@@ -117,23 +117,32 @@ class Wallet:
         """
         :return: List of lists. each inner list has the following elements:
                       [coin_code, amount, value_in_usd, value_in_btc]
-                 coins for which finding the value was failed, the values will be None
+                 coins for which finding the value was failed, the values will be 'N/A'
         """
         res = []
         coins_values = lookup_value(self.wallet.keys())
         for coin_idx, coin_code in enumerate(self.wallet.keys()):
             addresses_amounts = lookup_address(coin_code, self.wallet[coin_code]['addresses'])
-            amount = sum(addresses_amounts)
-            amount += self.wallet[coin_code]['manual_balance']
+            total_coin_amount = 0
+            if addresses_amounts is not None:
+                # addresses whose balance was failed to retrieve is -1. sum everything except
+                # failures
+                for addr_amount in addresses_amounts:
+                    if addr_amount > 0:
+                        total_coin_amount += addr_amount
 
-            if coins_values[coin_idx] == (None, None):
-                value_usd = None
-                value_btc = None
+            total_coin_amount += self.wallet[coin_code]['manual_balance']
+            total_coin_amount = float('%.8f' % total_coin_amount)  # truncate to maximum 8 digits
+            # after point
+
+            if coins_values[coin_idx] == ('N/A', 'N/A'):
+                value_usd = 'N/A'
+                value_btc = 'N/A'
             else:
-                value_usd = float('%.3f' % (amount * coins_values[coin_idx][0]))
-                value_btc = float('%.8f' % (amount * coins_values[coin_idx][1]))
+                value_usd = float('%.3f' % (total_coin_amount * coins_values[coin_idx][0]))
+                value_btc = float('%.8f' % (total_coin_amount * coins_values[coin_idx][1]))
 
-            res.append([coin_code, amount, value_usd, value_btc])
+            res.append([coin_code, total_coin_amount, value_usd, value_btc])
 
         return res
 
@@ -155,7 +164,7 @@ def lookup_address(coin, addresses):
     :param addresses: a collection of strings. each string is an address to look
     :return: a list of floats which correspond to the balances of the input addresses.
              If an address' balance could not be found or the address is invalid, the
-             returned balance for this address is 0.
+             returned balance for this address is -1.
              In case of failure None is returned
     """
     res = []
@@ -165,7 +174,7 @@ def lookup_address(coin, addresses):
         try:
             res.append(float(requests.get(base_query + addr).json()['balance']))
         except Exception:
-            return None
+            res.append(-1)
     return res
 
 
@@ -175,7 +184,7 @@ def lookup_value(coins):
 
     :param coins: a collection of coin codes.
     :return: list of tuples - each tuple is (coin_value_USD, coin_value_BTC).
-             if a coin is not found, its tuple contains two None's.
+             if a coin is not found, its tuple will be ('N/A', 'N/A')
     """
     res = []
     try:
@@ -190,8 +199,8 @@ def lookup_value(coins):
                     res.append((float(coin_info['price_usd']), float(coin_info['price_btc'])))
                     break
             if not found:
-                res.append(None)
+                res.append(('N/A', 'N/A'))
         return res
 
     except Exception:
-        return None
+        return [('N/A', 'N/A')] * len(coins)
