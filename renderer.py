@@ -29,6 +29,11 @@ SUB_MENU_START = (4, 2)
 
 
 def init_render(stdscr):
+    """
+    Initializes parameters needed for working with curses. must be called before calling functions
+    from this file
+    In addition presents the main header and a loading banner
+    """
     curses.curs_set(0)  # hide the cursor
 
     curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)
@@ -39,6 +44,10 @@ def init_render(stdscr):
 
     # set foreground and background colors to normal
     stdscr.bkgd(' ', attributes['normal'])
+
+    main_header(stdscr)
+    stdscr.addstr(SUB_MENU_START[Y], SUB_MENU_START[X], "Loading...")
+    stdscr.refresh()
 
 
 def main_header(stdscr):
