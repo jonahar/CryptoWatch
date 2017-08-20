@@ -135,6 +135,7 @@ def display_coins_table(stdscr, y, x, coins):
 
     number of lines written to screen is len(coins)+3
     """
+    coins.sort(key=lambda coin: coin[0])  # sort by coin_id alphabetically
 
     stdscr.addstr(y, x, "Coin        Amount      USD-value   BTC-value",
                   attributes['highlighted'])
