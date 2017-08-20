@@ -156,16 +156,12 @@ class Wallet:
         self.wallet = {}
 
 
-def lookup_address(coin, addresses):
+def lookup_address_old(coin, addresses):
     """
-    return the balance of given addresses of some coin
+    this is the deprecated version of lookup_address(). This function makes a single API call for
+    each address, and thus it is much slower.
 
-    :param coin the currency code (e.g. 'BTC' for bitcoin, 'ETH' for Ethereum, etc)
-    :param addresses: a collection of strings. each string is an address to look
-    :return: a list of floats which correspond to the balances of the input addresses.
-             If an address' balance could not be found or the address is invalid, the
-             returned balance for this address is -1.
-             In case of failure None is returned
+    See documentation of lookup_address() , it has the exact behaviour
     """
     res = []
     base_query = 'https://multiexplorer.com/api/address_balance/fallback?' \
@@ -176,6 +172,63 @@ def lookup_address(coin, addresses):
         except Exception:
             res.append(-1)
     return res
+
+
+def lookup_address(coin, addresses):
+    """
+    return the balance of given addresses of some coin
+
+    :param coin the currency code (e.g. 'BTC' for bitcoin, 'ETH' for Ethereum, etc)
+    :param addresses: a list of strings. each string is an address to look
+    :return: a list of floats which correspond to the balances of the input addresses.
+             If an address' balance could not be found or the address is invalid, the
+             returned balance for this address is -1.
+             In case of failure None is returned
+    """
+
+    if coin.upper() == 'BTC':
+        query = 'https://blockchain.info/balance?active='
+        for addr in addresses:
+            query += addr + ','
+        query = query[0:-1]  # remove the last comma. the API doesn't allow this
+        try:
+            dict = requests.get(query).json()
+        except:
+            # if at least one of the addresses is invalid the call will fail. try extracting them
+            # one by one using the old lookup
+            return lookup_address_old(coin, addresses)
+        res = []
+        for addr in dict.keys():
+            amount_satoshi = float(dict[addr]['final_balance'])
+            res.append(amount_satoshi / 1e8)
+        return res
+
+    if coin.upper() == 'LTC':
+        query = 'http://ltc.blockr.io/api/v1/address/balance/'
+        for addr in addresses:
+            query += addr + ','
+        coins_info = requests.get(query).json()['data']  # list of dictionaries
+        res = []
+        for coin_info in coins_info:
+            res.append(float(coin_info['balance']))
+        return res
+
+    if coin.upper() == 'ETH':
+        query = 'https://api.etherscan.io/api?module=account&action=balancemulti&address='
+        for addr in addresses:
+            query += addr + ','
+        coins_info = requests.get(query).json()['result']  # list of dictionaries
+        res = []
+        for coin_info in coins_info:
+            try:
+                res.append(float(coin_info['balance']) / 1e18)  # amount is returned in atomic units
+            except:
+                res.append(-1)
+        return res
+
+    # TODO add special lookup for BCH
+
+    return lookup_address_old(coin, addresses)
 
 
 def lookup_value(coins):
