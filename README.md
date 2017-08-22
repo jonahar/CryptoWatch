@@ -27,10 +27,3 @@ It uses serialization using pickle, which differs between the two versions of py
 By default the wallet saves its data to a file named `.cryptowatch.wallet` in a directory
 `.cryptowatch` in the user's home directory. These can be changed at the start of the file `wallet.py`.
 
-
-
-
-
-## Tip Jar
-
-If you appreciate this project and would like to support it, please consider dropping a tip at Bitcoin address 1LUEGXTsXFi7JEVmR9iwGzUiLxx18NH63p
