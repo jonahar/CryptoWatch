@@ -189,7 +189,7 @@ def lookup_address(coin, addresses):
     if coin.upper() == 'BTC':
         query = 'https://blockchain.info/balance?active='
         for addr in addresses:
-            query += addr + ','
+            query += addr + '|'
         query = query[0:-1]  # remove the last comma. the API doesn't allow this
         try:
             dict = requests.get(query).json()
