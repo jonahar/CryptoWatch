@@ -203,16 +203,6 @@ def lookup_address(coin, addresses):
             res.append(amount_satoshi / 1e8)
         return res
 
-    if coin.upper() == 'LTC':
-        query = 'http://ltc.blockr.io/api/v1/address/balance/'
-        for addr in addresses:
-            query += addr + ','
-        coins_info = requests.get(query).json()['data']  # list of dictionaries
-        res = []
-        for coin_info in coins_info:
-            res.append(float(coin_info['balance']))
-        return res
-
     if coin.upper() == 'ETH':
         query = 'https://api.etherscan.io/api?module=account&action=balancemulti&address='
         for addr in addresses:
