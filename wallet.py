@@ -75,7 +75,7 @@ class Wallet:
         """
         completely remove the coin from the wallet
         """
-        self.wallet.pop(coin_symbol, default=None)
+        self.wallet.pop(coin_symbol, None)
         self.dump()
     
     def get_coins_ids(self) -> List[str]:
