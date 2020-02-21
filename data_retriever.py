@@ -1,4 +1,4 @@
-from typing import Iterable, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import requests
 
@@ -6,24 +6,6 @@ import requests
 This module is responsible for retrieving data from external sources, such as
 addresses balance and coins value
 """
-
-
-def lookup_address_old(coin: str, addresses: Iterable[str]):
-    """
-    this is the deprecated version of lookup_address(). This function makes a single API call for
-    each address, and thus it is much slower.
-
-    See documentation of lookup_address() , it has the exact behaviour
-    """
-    res = []
-    base_query = 'https://multiexplorer.com/api/address_balance/fallback?' \
-                 'currency=' + coin.lower() + '&address='
-    for addr in addresses:
-        try:
-            res.append(float(requests.get(base_query + addr).json()['balance']))
-        except Exception:
-            res.append(-1)
-    return res
 
 
 def lookup_addresses(coin: str, addresses: List[str]):
@@ -46,9 +28,9 @@ def lookup_addresses(coin: str, addresses: List[str]):
         try:
             dict = requests.get(query).json()
         except:
-            # if at least one of the addresses is invalid the call will fail. try extracting them
-            # one by one using the old lookup
-            return lookup_address_old(coin, addresses)
+            # TODO: if at least one of the addresses is invalid the call will fail. try extracting them
+            #  one by one
+            return None
         res = []
         for addr in dict.keys():
             amount_satoshi = float(dict[addr]['final_balance'])
@@ -70,7 +52,7 @@ def lookup_addresses(coin: str, addresses: List[str]):
     
     # TODO add special lookup for BCH
     
-    return lookup_address_old(coin, addresses)
+    return None
 
 
 def lookup_value(coins: List[str]) -> List[Optional[Tuple[float, float]]]:
