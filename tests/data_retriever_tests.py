@@ -24,6 +24,15 @@ class DataRetrieverTest(unittest.TestCase):
         expected_balances = [0, 0.000518161526620852, NOT_FOUND]
         balances = lookup_addresses(coin="ETH", addresses=addresses)
         self.assertListEqual(balances, expected_balances)
+    
+    def test_bch_lookup(self):
+        addresses = [
+            "15NUwyBYrZcnUgTagsm1A7M2yL2GntpuaZ",  # balance 0
+            "1FDMwEo8qNa9icVcooBUoGvA6NriePtJJ3",  # balance 50
+        ]
+        expected_balances = [0, 50]
+        balances = lookup_addresses(coin="BCH", addresses=addresses)
+        self.assertListEqual(balances, expected_balances)
 
 
 if __name__ == '__main__':

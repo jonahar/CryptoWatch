@@ -55,6 +55,26 @@ def lookup_eth_addresses(addresses: List[str]) -> Optional[List[float]]:
     ]
 
 
+def lookup_bch_addresses(addresses: List[str]) -> Optional[List[float]]:
+    all_addresses_concat = ",".join(addresses)
+    query = f"https://bch-chain.api.btc.com/v3/address/{all_addresses_concat}"
+    
+    response = requests.get(query)
+    if not response.ok:
+        return None
+    
+    response_json = response.json()
+    
+    if "data" not in response_json or response_json["data"] is None:
+        error = response_json["err_msg"] if "err_msg" in response_json else ""
+        logger.error(f"Failed to retrieve BCH addresses info: {error}")
+    
+    return [
+        addr_info["balance"] / 1e8  # amount is returned in satoshis
+        for addr_info in response_json["data"]
+    ]
+
+
 def lookup_addresses(coin: str, addresses: List[str]) -> Optional[List[float]]:
     """
     return the balance of given addresses of some coin
@@ -72,6 +92,9 @@ def lookup_addresses(coin: str, addresses: List[str]) -> Optional[List[float]]:
     
     if coin.upper() == 'ETH':
         return lookup_eth_addresses(addresses)
+    
+    if coin.upper() == "BCH":
+        return lookup_bch_addresses(addresses)
     
     # TODO add special lookup for BCH
     
