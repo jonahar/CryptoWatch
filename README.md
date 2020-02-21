@@ -14,13 +14,9 @@ CryptoWatch is especially useful for tracking multiple cold storages.
 
 To start CryptoWatch simply run the 'cryptowatch' Python script:
 ```
-python cryptowatch.py
-```
-or
-```
+./cryptowatch.py
+OR
 python3 cryptowatch.py
 ```
-
-By default the wallet saves its data to a file named `.cryptowatch.wallet` in a directory
-`.cryptowatch` in the user's home directory. These can be changed at the start of the file `wallet.py`.
-
+By default, the wallet data is saved to a file named `wallet` in a directory
+`.cryptowatch` in the user's home directory.
