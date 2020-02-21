@@ -8,6 +8,38 @@ addresses balance and coins value
 """
 
 
+def lookup_btc_addresses(addresses: List[str]):
+    query = 'https://blockchain.info/balance?active='
+    for addr in addresses:
+        query += addr + '|'
+    query = query[:-1]  # remove the last separator. the API doesn't allow this
+    try:
+        dict = requests.get(query).json()
+    except:
+        # TODO: if at least one of the addresses is invalid the call will fail. try extracting them
+        #  one by one
+        return None
+    res = []
+    for addr in dict.keys():
+        amount_satoshi = float(dict[addr]['final_balance'])
+        res.append(amount_satoshi / 1e8)
+    return res
+
+
+def lookup_eth_addresses(addresses: List[str]):
+    query = 'https://api.etherscan.io/api?module=account&action=balancemulti&address='
+    for addr in addresses:
+        query += addr + ','
+    coins_info = requests.get(query).json()['result']  # list of dictionaries
+    res = []
+    for coin_info in coins_info:
+        try:
+            res.append(float(coin_info['balance']) / 1e18)  # amount is returned in atomic units
+        except:
+            res.append(-1)
+    return res
+
+
 def lookup_addresses(coin: str, addresses: List[str]):
     """
     return the balance of given addresses of some coin
@@ -20,35 +52,11 @@ def lookup_addresses(coin: str, addresses: List[str]):
              In case of failure None is returned
     """
     
-    if coin.upper() == 'BTC':
-        query = 'https://blockchain.info/balance?active='
-        for addr in addresses:
-            query += addr + '|'
-        query = query[:-1]  # remove the last separator. the API doesn't allow this
-        try:
-            dict = requests.get(query).json()
-        except:
-            # TODO: if at least one of the addresses is invalid the call will fail. try extracting them
-            #  one by one
-            return None
-        res = []
-        for addr in dict.keys():
-            amount_satoshi = float(dict[addr]['final_balance'])
-            res.append(amount_satoshi / 1e8)
-        return res
+    if coin == 'BTC':
+        return lookup_btc_addresses(addresses)
     
     if coin.upper() == 'ETH':
-        query = 'https://api.etherscan.io/api?module=account&action=balancemulti&address='
-        for addr in addresses:
-            query += addr + ','
-        coins_info = requests.get(query).json()['result']  # list of dictionaries
-        res = []
-        for coin_info in coins_info:
-            try:
-                res.append(float(coin_info['balance']) / 1e18)  # amount is returned in atomic units
-            except:
-                res.append(-1)
-        return res
+        return lookup_eth_addresses(addresses)
     
     # TODO add special lookup for BCH
     
