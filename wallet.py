@@ -7,7 +7,7 @@ from typing import Dict, Iterable, List, Set
 from data_retriever import lookup_addresses, lookup_value
 from utils import CRYPTO_WATCH_DIR
 
-WALLET_FILENAME = "wallet.pickle"
+WALLET_FILENAME = "wallet"
 WALLET_FULLPATH = os.path.join(CRYPTO_WATCH_DIR, WALLET_FILENAME)
 
 
