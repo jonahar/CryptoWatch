@@ -9,19 +9,18 @@ addresses balance and coins value
 
 
 def lookup_btc_addresses(addresses: List[str]):
-    query = 'https://blockchain.info/balance?active='
-    for addr in addresses:
-        query += addr + '|'
-    query = query[:-1]  # remove the last separator. the API doesn't allow this
+    all_addresses = "|".join(addresses)
+    query = f"https://blockchain.info/balance?active={all_addresses}"
+    
     try:
-        dict = requests.get(query).json()
+        res_dict = requests.get(query).json()
     except:
         # TODO: if at least one of the addresses is invalid the call will fail. try extracting them
         #  one by one
         return None
     res = []
-    for addr in dict.keys():
-        amount_satoshi = float(dict[addr]['final_balance'])
+    for addr in res_dict.keys():
+        amount_satoshi = float(res_dict[addr]['final_balance'])
         res.append(amount_satoshi / 1e8)
     return res
 
