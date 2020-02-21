@@ -1,4 +1,5 @@
 import curses
+from typing import List
 
 from data_retriever import lookup_addresses
 from wallet import Wallet
@@ -300,12 +301,18 @@ def display_addresses_list(stdscr, addresses, balances, base_y, base_x, highligh
         y += 1
 
 
-def remove_addresses_scr(stdscr, coin, addresses, balances, wallet):
+def remove_addresses_scr(
+    stdscr,
+    coin: str,
+    addresses: List[str],
+    balances: List[float],
+    wallet: Wallet,
+):
     """
     Display the remove addresses screen. Let the user choose addresses to remove
 
-    :param addresses list of addresses of the given coin
-    :param balances the corresponding balances for the addresses
+    `addresses` is a list of addresses of the given coin
+    `balances` is a list of the corresponding balances for the addresses
     """
     c = 0
     option = 0
@@ -365,8 +372,8 @@ def manage_coin(stdscr, coin: str, wallet: Wallet):
     c = 0
     option = 0
     tracked_coin = wallet.get_coin_info(coin)
-    addresses = tracked_coin.addresses
-    balances = lookup_addresses(coin, list(addresses))
+    addresses_list = list(tracked_coin.addresses)
+    balances = lookup_addresses(coin, addresses_list)
     manual_balance = tracked_coin.manual_balance
     base_x = SUB_MENU_START[X]
     base_y = SUB_MENU_START[Y]
@@ -378,9 +385,9 @@ def manage_coin(stdscr, coin: str, wallet: Wallet):
                 main_header(stdscr)
                 stdscr.addstr(base_y, base_x, coin + " in wallet:")
                 if balances is None:
-                    balances = [-1] * len(addresses)
-                display_addresses_list(stdscr, addresses, balances, base_y + 2, base_x)
-                y = base_y + 2 + len(addresses) + 2  # the next line to write to
+                    balances = [-1] * len(addresses_list)
+                display_addresses_list(stdscr, addresses_list, balances, base_y + 2, base_x)
+                y = base_y + 2 + len(addresses_list) + 2  # the next line to write to
                 if manual_balance != 0:
                     stdscr.addstr(y, base_x, "Manual balance: " + ('%.8f' % manual_balance))
                     y += 2
@@ -397,7 +404,7 @@ def manage_coin(stdscr, coin: str, wallet: Wallet):
             return
         
         if option == REMOVE_ADDRESSES:
-            remove_addresses_scr(stdscr, coin, addresses, balances, wallet)
+            remove_addresses_scr(stdscr, coin, addresses_list, balances, wallet)
             # addresses may have changed. get updated info
             tracked_coin = wallet.get_coin_info(coin)
             balances = lookup_addresses(coin, list(tracked_coin.addresses))
