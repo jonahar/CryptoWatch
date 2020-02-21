@@ -4,11 +4,8 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Dict, Iterable, List, Set
 
+from config import CRYPTO_WATCH_DIR, WALLET_FULLPATH
 from data_retriever import lookup_addresses, lookup_value
-from utils import CRYPTO_WATCH_DIR
-
-WALLET_FILENAME = "wallet"
-WALLET_FULLPATH = os.path.join(CRYPTO_WATCH_DIR, WALLET_FILENAME)
 
 
 @dataclass
