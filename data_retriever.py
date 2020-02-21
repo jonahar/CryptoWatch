@@ -2,44 +2,60 @@ from typing import List, Optional, Tuple
 
 import requests
 
+from utils import logger
+
 """
 This module is responsible for retrieving data from external sources, such as
 addresses balance and coins value
 """
 
+NOT_FOUND = -1
 
-def lookup_btc_addresses(addresses: List[str]):
+
+def lookup_btc_addresses(addresses: List[str]) -> Optional[List[float]]:
     all_addresses = "|".join(addresses)
     query = f"https://blockchain.info/balance?active={all_addresses}"
     
-    try:
-        res_dict = requests.get(query).json()
-    except:
+    response = requests.get(query)
+    if not response.ok:
         # TODO: if at least one of the addresses is invalid the call will fail. try extracting them
         #  one by one
         return None
-    res = []
-    for addr in res_dict.keys():
-        amount_satoshi = float(res_dict[addr]['final_balance'])
-        res.append(amount_satoshi / 1e8)
-    return res
+    
+    response_json = response.json()
+    
+    return [
+        response_json[addr]['final_balance'] / 1e8  # amount is returned in satoshis
+        for addr in addresses
+    ]
 
 
-def lookup_eth_addresses(addresses: List[str]):
-    query = 'https://api.etherscan.io/api?module=account&action=balancemulti&address='
-    for addr in addresses:
-        query += addr + ','
-    coins_info = requests.get(query).json()['result']  # list of dictionaries
-    res = []
-    for coin_info in coins_info:
-        try:
-            res.append(float(coin_info['balance']) / 1e18)  # amount is returned in atomic units
-        except:
-            res.append(-1)
-    return res
+def lookup_eth_addresses(addresses: List[str]) -> Optional[List[float]]:
+    all_addresses = ",".join(addresses)
+    query = f"https://api.etherscan.io/api?module=account&action=balancemulti&address={all_addresses}"
+    
+    response = requests.get(query)
+    if not response.ok:
+        return None
+    response_json: List[dict] = response.json()['result']
+    
+    # check that the addresses in the response are in the same order
+    if not all(map(
+        lambda t: t[0] == t[1]["account"],
+        zip(addresses, response_json)
+    )):
+        logger.error("ETH addresses lookup response have unexpected order")
+        return None
+    
+    return [
+        float(response_dict["balance"]) / 1e18  # amount is returned in atomic units
+        if "balance" in response_dict and response_dict["balance"] != ""
+        else NOT_FOUND
+        for response_dict in response_json
+    ]
 
 
-def lookup_addresses(coin: str, addresses: List[str]):
+def lookup_addresses(coin: str, addresses: List[str]) -> Optional[List[float]]:
     """
     return the balance of given addresses of some coin
 
