@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
 from curses import wrapper
+
 import renderer
-import wallet as Wallet
+from wallet import Wallet
 
 
 def run_crypto_watch(stdscr):
     renderer.init_render(stdscr)
-    wallet = Wallet.Wallet()
+    wallet = Wallet()
     option = renderer.ADD
     refresh = True
     while option != renderer.EXIT:
