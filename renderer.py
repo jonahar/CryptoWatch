@@ -244,7 +244,7 @@ def display_add_scr(stdscr, wallet: Wallet):
         stdscr.addstr(last_line + 2, SUB_MENU_START[X],
                       "Enter coin code/symbol (e.g. BTC): ")
         last_line += 2
-        coin_code = stdscr.getstr().decode("utf-8")
+        coin_code = stdscr.getstr().decode("utf-8").upper()
         
         if option == 0:
             stdscr.addstr(last_line + 2, SUB_MENU_START[X],
