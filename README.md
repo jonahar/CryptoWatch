@@ -12,7 +12,7 @@ CryptoWatch is especially useful for tracking multiple cold storages.
 
 ## Usage
 
-To start CryptoWatch simply run the 'cryptowatch' Python script:
+To start CryptoWatch simply run the main module 'cryptowatch':
 ```
 ./cryptowatch.py
 OR
