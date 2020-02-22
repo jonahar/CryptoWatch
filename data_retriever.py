@@ -55,10 +55,12 @@ def lookup_eth_addresses(addresses: List[str]) -> Optional[List[float]]:
     ]
 
 
-def lookup_bch_addresses(addresses: List[str]) -> Optional[List[float]]:
+def lookup_addresses_btc_com_api(chain: str, addresses: List[str]) -> Optional[List[float]]:
+    """
+    lookup the addresses using the btc.com API, which supports multiple chains
+    """
     all_addresses_concat = ",".join(addresses)
-    query = f"https://bch-chain.api.btc.com/v3/address/{all_addresses_concat}"
-    
+    query = f"https://{chain}-chain.api.btc.com/v3/address/{all_addresses_concat}"
     response = requests.get(query)
     if not response.ok:
         return None
@@ -69,10 +71,25 @@ def lookup_bch_addresses(addresses: List[str]) -> Optional[List[float]]:
         error = response_json["err_msg"] if "err_msg" in response_json else ""
         logger.error(f"Failed to retrieve BCH addresses info: {error}")
     
+    # response_json["data"] may be a list of dictionaries, or a singe dictionary
+    # if it's a single dictionary, put it in a list so the below code works as
+    # expected
+    
+    if type(response_json["data"]) == dict:
+        response_json["data"] = [response_json["data"]]
+    
     return [
         addr_info["balance"] / 1e8  # amount is returned in satoshis
         for addr_info in response_json["data"]
     ]
+
+
+def lookup_bch_addresses(addresses: List[str]) -> Optional[List[float]]:
+    return lookup_addresses_btc_com_api(chain="bch", addresses=addresses)
+
+
+def lookup_ltc_addresses(addresses: List[str]) -> Optional[List[float]]:
+    return lookup_addresses_btc_com_api(chain="ltc", addresses=addresses)
 
 
 def lookup_addresses(coin: str, addresses: List[str]) -> Optional[List[float]]:
@@ -96,7 +113,8 @@ def lookup_addresses(coin: str, addresses: List[str]) -> Optional[List[float]]:
     if coin.upper() == "BCH":
         return lookup_bch_addresses(addresses)
     
-    # TODO add special lookup for BCH
+    if coin.upper() == "LTC":
+        return lookup_ltc_addresses(addresses)
     
     return None
 

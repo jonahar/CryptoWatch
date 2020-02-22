@@ -33,6 +33,23 @@ class DataRetrieverTest(unittest.TestCase):
         expected_balances = [0, 50]
         balances = lookup_addresses(coin="BCH", addresses=addresses)
         self.assertListEqual(balances, expected_balances)
+    
+    def test_ltc_lookup_single(self):
+        addresses = [
+            "LgYj5bghguAf4kdSh8erb3bTnjpuZtYUti",  # balance 0.05587024
+        ]
+        expected_balances = [0.05587024]
+        balances = lookup_addresses(coin="LTC", addresses=addresses)
+        self.assertListEqual(balances, expected_balances)
+    
+    def test_ltc_lookup_multiple(self):
+        addresses = [
+            "LgYj5bghguAf4kdSh8erb3bTnjpuZtYUti",  # balance 0.05587024
+            "LhKxXU6QtxoGNxeU9uUTrLjA1X5wPtbiep",  # balance 0.00000960
+        ]
+        expected_balances = [0.05587024, 0.00000960]
+        balances = lookup_addresses(coin="LTC", addresses=addresses)
+        self.assertListEqual(balances, expected_balances)
 
 
 if __name__ == '__main__':
