@@ -103,17 +103,18 @@ def lookup_addresses(coin: str, addresses: List[str]) -> Optional[List[float]]:
              returned balance for this address is -1.
              In case of failure None is returned
     """
+    coin_symbol = coin.upper()
     
-    if coin == 'BTC':
+    if coin_symbol == 'BTC':
         return lookup_btc_addresses(addresses)
     
-    if coin.upper() == 'ETH':
+    if coin_symbol == 'ETH':
         return lookup_eth_addresses(addresses)
     
-    if coin.upper() == "BCH":
+    if coin_symbol == "BCH":
         return lookup_bch_addresses(addresses)
     
-    if coin.upper() == "LTC":
+    if coin_symbol == "LTC":
         return lookup_ltc_addresses(addresses)
     
     return None
